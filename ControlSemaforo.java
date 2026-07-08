@@ -1,4 +1,3 @@
-
 /**
  * Write a description of class Control here.
  * 
@@ -11,6 +10,10 @@ public class ControlSemaforo implements Runnable
 
     private final int TIEMPO_VERDE = 5000;
     private final int TIEMPO_AMARILLO = 2000;
+    // Colchón con ambos ejes en rojo, para que los carros que ya iban
+    // cruzando (o girando) terminen de despejar el cruce antes de que
+    // se le dé verde al otro eje.
+    private final int TIEMPO_TODO_ROJO = 800;
 
     public ControlSemaforo(PanelCruce panel)
     {
@@ -43,9 +46,13 @@ public class ControlSemaforo implements Runnable
 
                 Thread.sleep(TIEMPO_AMARILLO);
 
-                // Norte-Sur en ROJO
+                // Norte-Sur en ROJO (todo el cruce en rojo un momento)
                 panel.getNorte().cambiarEstado(Semaforo.ROJO);
                 panel.getSur().cambiarEstado(Semaforo.ROJO);
+
+                panel.repaint();
+
+                Thread.sleep(TIEMPO_TODO_ROJO);
 
                 // Este-Oeste en VERDE
                 panel.getEste().cambiarEstado(Semaforo.VERDE);
@@ -63,11 +70,13 @@ public class ControlSemaforo implements Runnable
 
                 Thread.sleep(TIEMPO_AMARILLO);
 
-                // Este-Oeste en ROJO
+                // Este-Oeste en ROJO (todo el cruce en rojo un momento)
                 panel.getEste().cambiarEstado(Semaforo.ROJO);
                 panel.getOeste().cambiarEstado(Semaforo.ROJO);
 
                 panel.repaint();
+
+                Thread.sleep(TIEMPO_TODO_ROJO);
             }
             catch(InterruptedException e)
             {

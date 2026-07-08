@@ -1,4 +1,3 @@
-
 /**
  * Write a description of class Control here.
  * 
@@ -29,8 +28,11 @@ public class ControlCarril implements Runnable
                     // Solo mueve los carros de este carril
                     if(carro.getDireccion() == direccion)
                     {
-                        // ¿Puede avanzar?
-                        if(panel.puedeAvanzar(carro))
+                        // ¿Ya le toca decidir si sigue derecho o gira?
+                        panel.actualizarGiro(carro);
+
+                        // ¿Puede avanzar (semáforo en verde) y NO hay carro enfrente?
+                        if(panel.puedeAvanzar(carro) && !panel.vaAChocar(carro))
                         {
                             carro.continuar();
                         }
