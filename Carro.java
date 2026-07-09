@@ -1,11 +1,12 @@
 /**
  * Write a description of class Carro here.
- * 
- * @author (your name) 
+ * * @author (your name) 
  * @version (a version number or a date)
  */
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Font;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Carro
 {
@@ -39,8 +40,15 @@ public class Carro
     private double giroPasoY;
     private int giroPasosRestantes;
 
-    // Cuantos "ticks" dura la curva del giro (mas alto = giro mas suave)
-    private static final int GIRO_PASOS = 40;
+    // Cuantos "ticks" dura la curva del giro (mas alto = giro mas lento y suave)
+    private static final int GIRO_PASOS = 45;
+
+    // ---- Identificador Ãºnico para empatar con la tabla ----
+    // AtomicInteger: si algÃºn dÃ­a se crean carros desde mÃ¡s de un hilo
+    // a la vez (por ejemplo, un generador de trÃ¡fico automÃ¡tico), evita
+    // que dos carros terminen con el mismo id por una condiciÃ³n de carrera.
+    private static AtomicInteger contadorId = new AtomicInteger(0);
+    private final int id;
 
     public Carro(int x, int y, Direccion direccion)
     {
@@ -59,6 +67,17 @@ public class Carro
         yaDecidioGiro = false;
 
         color = PALETA[(int)(Math.random() * PALETA.length)];
+        
+        id = contadorId.incrementAndGet();
+    }
+
+    /**
+     * Reinicia el contador de ids (se usa cuando se inicia el panel
+     * para que vuelvan a numerarse desde el 1).
+     */
+    public static void reiniciarContador()
+    {
+        contadorId.set(0);
     }
 
     public void dibujar(Graphics g)
@@ -66,8 +85,7 @@ public class Carro
         boolean horizontal = (direccion == Direccion.ESTE || direccion == Direccion.OESTE);
 
         // Si va en horizontal, el carro se "acuesta": lo largo (alto) queda
-        // en el eje X y lo angosto (ancho) en el eje Y, para que se vea
-        // acostado en su carril y no como un rectángulo parado fuera de lugar.
+        // en el eje X y lo angosto (ancho) en el eje Y
         int w = horizontal ? alto : ancho;
         int h = horizontal ? ancho : alto;
 
@@ -78,7 +96,7 @@ public class Carro
         g.setColor(new Color(0, 0, 0, 70));
         g.fillRoundRect(px + 2, py + 2, w, h, 10, 10);
 
-        // Carrocería
+        // CarrocerÃ­a
         g.setColor(color);
         g.fillRoundRect(px, py, w, h, 10, 10);
 
@@ -86,7 +104,7 @@ public class Carro
         g.setColor(color.darker());
         g.drawRoundRect(px, py, w, h, 10, 10);
 
-        // Parabrisas: marca hacia dónde está el frente del carro
+        // Parabrisas: marca hacia dÃ³nde estÃ¡ el frente del carro
         g.setColor(new Color(190, 220, 250));
         switch(direccion){
             case NORTE:
@@ -102,6 +120,18 @@ public class Carro
                 g.fillRoundRect(px + 4, py + 3, 9, h - 6, 5, 5);
                 break;
         }
+
+        // --- PINTAR EL NÃšMERO IDENTIFICADOR ---
+        g.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        String txtId = String.valueOf(id);
+        int textX = px + (w / 2) - 4;
+        int textY = py + (h / 2) + 5;
+        
+        g.setColor(new Color(0, 0, 0, 180));
+        g.drawString(txtId, textX + 1, textY + 1); // Sombra
+        
+        g.setColor(Color.WHITE); 
+        g.drawString(txtId, textX, textY);
     }
 
     public void avanzar()
@@ -137,15 +167,12 @@ public class Carro
     }
 
     /**
-     * Avanza un paso de la animacion de giro (linea recta hacia el
-     * punto de destino en el nuevo carril). Un carro girando nunca
-     * se detiene: ya se comprometio a cruzar.
+     * Avanza un paso de la animacion de giro.
      */
     private void avanzarGiro()
     {
         if(giroPasosRestantes <= 0)
         {
-            // Termina el giro: queda alineado en el carril nuevo
             x = giroDestinoX;
             y = giroDestinoY;
             direccion = direccionDespuesDelGiro;
@@ -159,9 +186,7 @@ public class Carro
     }
 
     /**
-     * Inicia un giro suave hacia nuevaDireccion. destinoX/destinoY es el
-     * punto del carril nuevo, ya dentro del cruce, donde el carro queda
-     * alineado al terminar de girar.
+     * Inicia un giro suave hacia nuevaDireccion.
      */
     public void iniciarGiro(Direccion nuevaDireccion, double destinoX, double destinoY)
     {
@@ -189,16 +214,11 @@ public class Carro
         return yaDecidioGiro;
     }
 
-    /**
-     * Marca que este carro ya paso por el punto de decision y va a
-     * seguir derecho (no necesita animacion de giro).
-     */
     public void marcarDecisionTomada(){
         yaDecidioGiro = true;
     }
 
     public void detener(){
-        // Un carro que ya esta girando/cruzando no se puede detener a la mitad.
         if(girando){
             return;
         }
@@ -213,9 +233,24 @@ public class Carro
         return detenido;
     }
 
+    public String getEstadoTexto(){
+        if(girando){
+            return "Girando";
+        }
+        if(detenido){
+            return "Detenido";
+        }
+        return "Avanzando";
+    }
+
     //====================
     // GETTERS
     //====================
+
+    public int getId()
+    {
+        return id;
+    }
 
     public int getX()
     {
